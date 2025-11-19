@@ -68,6 +68,12 @@
                         android:textColor="#A0A3B1"
                         android:textSize="14sp" />
 
+                    <com.google.android.gms.maps.MapView
+                        android:id="@+id/map_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:layout_marginTop="16dp" />
+
                     <!-- 위도/경도 표시(처음엔 대충 - 로) -->
                     <TextView
                         android:id="@+id/tv_latitude"

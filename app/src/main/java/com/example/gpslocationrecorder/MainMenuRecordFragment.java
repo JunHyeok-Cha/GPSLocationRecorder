@@ -24,12 +24,19 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.CancellationTokenSource;
 
 
-
-public class MainMenuRecordFragment extends Fragment {
+public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallback {
 
     // UI
     private TextView tvLatitude;
@@ -45,6 +52,9 @@ public class MainMenuRecordFragment extends Fragment {
     private FusedLocationProviderClient fusedLocationClient;
     private Double currentLat = null;
     private Double currentLng = null;
+    private MapView mapView;
+    private GoogleMap googleMap;
+
 
     // (옵션) 찍은 사진 썸네일 저장용
     private Bitmap capturedImageBitmap = null;
@@ -109,6 +119,12 @@ public class MainMenuRecordFragment extends Fragment {
         ViewGroup rootView = (ViewGroup) inflater.inflate(
                 R.layout.fragment_main_menu_record, container, false
         );
+
+        mapView = rootView.findViewById(R.id.map_view);
+        if (mapView != null) {
+            mapView.onCreate(savedInstanceState);
+            mapView.getMapAsync(this);
+        }
 
         // UI 연결
         tvLatitude = rootView.findViewById(R.id.tv_latitude);
@@ -198,7 +214,10 @@ public class MainMenuRecordFragment extends Fragment {
             return;
         }
 
-        fusedLocationClient.getLastLocation()
+        CancellationTokenSource cts = new CancellationTokenSource();
+
+        fusedLocationClient
+                .getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cts.getToken())
                 .addOnSuccessListener(requireActivity(), location -> {
                     if (location != null) {
                         updateLocationUI(location);
@@ -222,9 +241,31 @@ public class MainMenuRecordFragment extends Fragment {
         currentLat = location.getLatitude();
         currentLng = location.getLongitude();
 
+        updateMapLocation();
         tvLatitude.setText("위도: " + currentLat);
         tvLongitude.setText("경도: " + currentLng);
         tvLocationDescription.setText("위치 정보를 가져왔습니다.");
+    }
+
+    @Override
+    public void onMapReady(@NonNull GoogleMap map) {
+        googleMap = map;
+        googleMap.getUiSettings().setZoomControlsEnabled(true);
+
+        // 이미 위치를 받아둔 상태라면, 지도에 바로 반영
+        updateMapLocation();
+    }
+    private void updateMapLocation() {
+        if (googleMap == null || currentLat == null || currentLng == null) return;
+
+        LatLng here = new LatLng(currentLat, currentLng);
+
+        googleMap.clear();
+        googleMap.addMarker(new MarkerOptions()
+                .position(here)
+                .title("현재 위치"));
+
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(here, 16f));
     }
 
     /* ===========================
@@ -269,4 +310,33 @@ public class MainMenuRecordFragment extends Fragment {
             ).show();
         }
     }
+
+    //생명 주기
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (mapView != null) mapView.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        if (mapView != null) mapView.onPause();
+        super.onPause();
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (mapView != null) mapView.onDestroy();
+        super.onDestroyView();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        if (mapView != null) mapView.onLowMemory();
+    }
+
+
+
+
 }
