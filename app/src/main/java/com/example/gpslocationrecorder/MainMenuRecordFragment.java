@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,6 +37,12 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.CancellationTokenSource;
 
+import com.example.gpslocationrecorder.data.db.AppDatabase;
+import com.example.gpslocationrecorder.data.entity.ParkingRecord;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallback {
 
@@ -63,6 +70,8 @@ public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallba
 
     // (옵션) 찍은 사진 썸네일 저장용
     private Bitmap capturedImageBitmap = null;
+    // ✅ 실제 파일 경로 저장용
+    private String capturedPhotoPath = null;
 
     // Activity Result / Permission 런처
     private ActivityResultLauncher<String> locationPermissionLauncher;
@@ -191,8 +200,29 @@ public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallba
         String floor = etFloor.getText().toString().trim();
         String memo = etMemo.getText().toString().trim();
 
-        // TODO: DB/파일에 저장 로직 추가
-        // 지금은 그냥 저장되었다고만 안내
+        long now = System.currentTimeMillis();
+        String photoPath = capturedPhotoPath;
+
+        // ParkingRecord 엔티티 생성
+        ParkingRecord record = new ParkingRecord(
+                currentLat,
+                currentLng,
+                photoPath,
+                floor,
+                memo,
+                now
+        );
+
+        // DB 인스턴스
+        AppDatabase db = AppDatabase.getInstance(requireContext());
+
+        // Room 은 메인스레드에서 접근하면 예외를 던지므로, 새 쓰레드에서 실행
+        new Thread(() -> {
+            db.parkingRecordDao().insert(record);
+            // 필요하면 여기서 Log 찍거나, 나중에 콜백 처리
+        }).start();
+
+        // UI 쪽은 바로 처리해도 OK (DB insert는 백그라운드에서 돌게 됨)
         Toast.makeText(
                 requireContext(),
                 "주차 기록이 저장되었습니다.",
@@ -201,6 +231,7 @@ public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallba
 
         resetLocationAndMap();
         resetPhoto();
+        resetTextFields();
     }
 
     /* ===========================
@@ -339,6 +370,9 @@ public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallba
                 if (extras instanceof Bitmap) {
                     capturedImageBitmap = (Bitmap) extras;
 
+                    // ✅ Bitmap을 파일로 저장하고 경로를 멤버 변수에 저장
+                    capturedPhotoPath = saveBitmapToFile(capturedImageBitmap);
+
                     // ✅ 썸네일을 ImageView에 표시
                     if (ivPhotoPreview != null) {
                         ivPhotoPreview.setImageBitmap(capturedImageBitmap);
@@ -358,8 +392,44 @@ public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallba
             ).show();
         }
     }
+
+    /** Bitmap을 앱 전용 Pictures 폴더에 JPG로 저장하고, 파일 경로를 반환 */
+    private String saveBitmapToFile(Bitmap bitmap) {
+        if (bitmap == null) return null;
+
+        // 앱 전용 외부 저장소: /storage/emulated/0/Android/data/패키지명/files/Pictures
+        File directory = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        if (directory == null) return null;
+
+        // 파일 이름: parking_타임스탬프.jpg
+        String fileName = "parking_" + System.currentTimeMillis() + ".jpg";
+        File file = new File(directory, fileName);
+
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(file);
+            // JPEG 형식으로 압축해서 저장 (품질 90)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+            fos.flush();
+            return file.getAbsolutePath();  // ✅ 이 경로를 DB에 넣을 것
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+
     private void resetPhoto() {
         capturedImageBitmap = null;
+        capturedPhotoPath = null;
 
         if (ivPhotoPreview != null) {
             ivPhotoPreview.setImageDrawable(null);
@@ -370,6 +440,16 @@ public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallba
             photoPlaceholderLayout.setVisibility(View.VISIBLE);
         }
     }
+
+    private void resetTextFields() {
+        if (etFloor != null) {
+            etFloor.setText("");
+        }
+        if (etMemo != null) {
+            etMemo.setText("");
+        }
+    }
+
     //생명 주기
     @Override
     public void onResume() {
