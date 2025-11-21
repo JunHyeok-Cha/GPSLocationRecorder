@@ -125,6 +125,7 @@
                     android:textStyle="bold" />
 
                 <LinearLayout
+                    android:id="@+id/layout_photo_placeholder"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
@@ -147,6 +148,14 @@
                         android:textSize="14sp" />
                 </LinearLayout>
 
+                <ImageView
+                    android:id="@+id/iv_photo_preview"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:layout_marginTop="12dp"
+                    android:scaleType="centerCrop"
+                    android:adjustViewBounds="true"
+                    android:visibility="gone" />
                 <Button
                     android:id="@+id/btn_take_photo"
                     android:layout_width="match_parent"
