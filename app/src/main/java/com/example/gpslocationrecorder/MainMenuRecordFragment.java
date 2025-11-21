@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.annotation.SuppressLint;
@@ -54,6 +55,10 @@ public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallba
     private Double currentLng = null;
     private MapView mapView;
     private GoogleMap googleMap;
+    // 상단 필드들 옆에 추가
+    private ImageView ivPhotoPreview;
+    private View photoPlaceholderLayout;
+
 
 
     // (옵션) 찍은 사진 썸네일 저장용
@@ -135,6 +140,14 @@ public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallba
         btnRecord = rootView.findViewById(R.id.btn_record);
         etFloor = rootView.findViewById(R.id.et_floor);
         etMemo = rootView.findViewById(R.id.et_memo);
+        ivPhotoPreview = rootView.findViewById(R.id.iv_photo_preview);
+        photoPlaceholderLayout = rootView.findViewById(R.id.layout_photo_placeholder);
+
+        if (mapView != null) {
+            mapView.setVisibility(View.GONE);
+            mapView.onCreate(savedInstanceState);
+            mapView.getMapAsync(this);
+        }
 
         // 버튼 리스너
         btnGetLocation.setOnClickListener(v -> onClickGetLocation());
@@ -185,6 +198,9 @@ public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallba
                 "주차 기록이 저장되었습니다.",
                 Toast.LENGTH_SHORT
         ).show();
+
+        resetLocationAndMap();
+        resetPhoto();
     }
 
     /* ===========================
@@ -241,10 +257,14 @@ public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallba
         currentLat = location.getLatitude();
         currentLng = location.getLongitude();
 
-        updateMapLocation();
         tvLatitude.setText("위도: " + currentLat);
         tvLongitude.setText("경도: " + currentLng);
         tvLocationDescription.setText("위치 정보를 가져왔습니다.");
+
+        if (mapView != null && mapView.getVisibility() != View.VISIBLE) {
+            mapView.setVisibility(View.VISIBLE);
+        }
+        updateMapLocation();
     }
 
     @Override
@@ -267,7 +287,25 @@ public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallba
 
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(here, 16f));
     }
+    private void resetLocationAndMap() {
+        currentLat = null;
+        currentLng = null;
 
+        // 지도에 찍힌 마커 제거
+        if (googleMap != null) {
+            googleMap.clear();
+        }
+
+        // 지도 숨기기
+        if (mapView != null) {
+            mapView.setVisibility(View.GONE);
+        }
+
+        // 텍스트도 초기 상태로 되돌리기
+        tvLatitude.setText("위도: -");
+        tvLongitude.setText("경도: -");
+        tvLocationDescription.setText("위치 정보를 가져와주세요");
+    }
     /* ===========================
        카메라 관련
        =========================== */
@@ -300,7 +338,17 @@ public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallba
                 Object extras = data.getExtras().get("data");
                 if (extras instanceof Bitmap) {
                     capturedImageBitmap = (Bitmap) extras;
-                    // TODO: 필요하면 ImageView에 보여주거나 파일로 저장
+
+                    // ✅ 썸네일을 ImageView에 표시
+                    if (ivPhotoPreview != null) {
+                        ivPhotoPreview.setImageBitmap(capturedImageBitmap);
+                        ivPhotoPreview.setVisibility(View.VISIBLE);
+                    }
+
+                    // ✅ 기본 카메라 아이콘/텍스트는 숨기기
+                    if (photoPlaceholderLayout != null) {
+                        photoPlaceholderLayout.setVisibility(View.GONE);
+                    }
                 }
             }
             Toast.makeText(
@@ -310,7 +358,18 @@ public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallba
             ).show();
         }
     }
+    private void resetPhoto() {
+        capturedImageBitmap = null;
 
+        if (ivPhotoPreview != null) {
+            ivPhotoPreview.setImageDrawable(null);
+            ivPhotoPreview.setVisibility(View.GONE);
+        }
+
+        if (photoPlaceholderLayout != null) {
+            photoPlaceholderLayout.setVisibility(View.VISIBLE);
+        }
+    }
     //생명 주기
     @Override
     public void onResume() {
