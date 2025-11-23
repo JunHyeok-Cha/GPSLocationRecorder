@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -23,11 +24,20 @@ import java.util.Locale;
 public class ParkingRecordAdapter extends RecyclerView.Adapter<ParkingRecordAdapter.ViewHolder> {
 
     private List<ParkingRecord> items = new ArrayList<>();
-    private Context context;
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.KOREA);
+    private final Context context;
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.KOREA);
 
-    public ParkingRecordAdapter(Context context) {
+    // ★ [추가] 삭제 버튼 클릭을 프래그먼트에 알려주기 위한 인터페이스
+    public interface OnItemDeleteListener {
+        void onDeleteClick(ParkingRecord record);
+    }
+
+    private final OnItemDeleteListener deleteListener;
+
+    // ★ [수정] 생성자에서 삭제 리스너를 함께 받도록 변경
+    public ParkingRecordAdapter(Context context, OnItemDeleteListener deleteListener) {
         this.context = context;
+        this.deleteListener = deleteListener;
     }
 
     public void setItems(List<ParkingRecord> items) {
@@ -69,22 +79,22 @@ public class ParkingRecordAdapter extends RecyclerView.Adapter<ParkingRecordAdap
             holder.ivImage.setImageResource(android.R.drawable.ic_menu_camera);
         }
 
-        // ★★★ [핵심] 클릭 이벤트 리스너 ★★★
-        // 사용자가 리스트의 아이템(itemView)을 클릭하면 실행됩니다.
+        // 2. 상세보기 클릭 이벤트
         holder.itemView.setOnClickListener(v -> {
-            // 1. 상세 화면(ParkingDetailActivity)으로 갈 준비
             Intent intent = new Intent(context, ParkingDetailActivity.class);
-
-            // 2. 상세 화면에 보여줄 데이터들을 담기 (Intent에 putExtra로 넣음)
             intent.putExtra("lat", item.latitude);
             intent.putExtra("lng", item.longitude);
             intent.putExtra("path", item.photoPath);
             intent.putExtra("floor", item.floor);
             intent.putExtra("memo", item.memo);
             intent.putExtra("time", item.createdAt);
-
-            // 3. 화면 이동 시작!
             context.startActivity(intent);
+        });
+
+        // 3. ★ [추가] 삭제 버튼 클릭 이벤트
+        holder.btnDelete.setOnClickListener(v -> {
+            // 프래그먼트에 "이 아이템 지워줘!" 하고 알림
+            deleteListener.onDeleteClick(item);
         });
     }
 
@@ -93,17 +103,19 @@ public class ParkingRecordAdapter extends RecyclerView.Adapter<ParkingRecordAdap
         return items.size();
     }
 
+    // ★ [수정] ViewHolder에 삭제 버튼(ImageButton) 추가
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivImage;
         TextView tvTime, tvFloor, tvMemo;
+        ImageButton btnDelete; // 삭제 버튼
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            // item_parking_record.xml의 ID들과 연결
             ivImage = itemView.findViewById(R.id.iv_record_image);
             tvTime = itemView.findViewById(R.id.tv_record_time);
             tvFloor = itemView.findViewById(R.id.tv_record_floor);
             tvMemo = itemView.findViewById(R.id.tv_record_memo);
+            btnDelete = itemView.findViewById(R.id.btn_delete_item); // ID로 찾아오기
         }
     }
 }

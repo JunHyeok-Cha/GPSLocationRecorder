@@ -6,14 +6,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import androidx.appcompat.widget.SwitchCompat;
 import android.widget.Toast;
+import androidx.appcompat.widget.SwitchCompat;
 
 public class MainMenuSettingFragment extends Fragment {
 
     private SwitchCompat switchRecordNotification;
     private SwitchCompat switchAutoRecord;
-    private Button btnDeleteAllData;
+    // private Button btnDeleteAllData; // 삭제됨
+    // private AppDatabase db; // 삭제됨
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -22,7 +23,9 @@ public class MainMenuSettingFragment extends Fragment {
 
         switchRecordNotification = view.findViewById(R.id.switch_record_notification);
         switchAutoRecord = view.findViewById(R.id.switch_auto_record);
-        btnDeleteAllData = view.findViewById(R.id.btn_delete_all_data);
+        // btnDeleteAllData = view.findViewById(R.id.btn_delete_all_data); // 삭제됨
+
+        // db = AppDatabase.getInstance(requireContext()); // 삭제됨
 
         loadSettings();
         setupListeners();
@@ -49,9 +52,9 @@ public class MainMenuSettingFragment extends Fragment {
             Toast.makeText(getContext(), status, Toast.LENGTH_SHORT).show();
         });
 
-        btnDeleteAllData.setOnClickListener(v -> {
-            // TODO: 사용자에게 경고 다이얼로그를 표시하고 확인 후 데이터베이스 삭제 로직 실행
-            Toast.makeText(getContext(), "모든 데이터 삭제 기능을 실행합니다. (경고 필요)", Toast.LENGTH_SHORT).show();
-        });
+        // btnDeleteAllData.setOnClickListener 리스너 전체 삭제됨
     }
+
+    // showDeleteAllConfirmationDialog() 함수 전체 삭제됨
+    // deleteAllRecords() 함수 전체 삭제됨
 }
