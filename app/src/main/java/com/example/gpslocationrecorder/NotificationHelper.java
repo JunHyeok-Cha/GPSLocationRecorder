@@ -2,6 +2,7 @@ package com.example.gpslocationrecorder;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.os.Build;
 import androidx.core.app.NotificationCompat;
@@ -47,8 +48,17 @@ public class NotificationHelper {
      * @param notificationId 각 알림을 구별하는 고유 ID
      */
     public void sendNotification(String title, String body, int notificationId) {
+        sendNotification(title, body, notificationId, null);
+    }
 
-        // NotificationCompat.Builder를 사용하여 알림 디자인 및 내용 설정
+    // 🔹 알림 눌렀을 때 이동할 화면을 넣을 수 있는 오버로드
+    public void sendNotification(
+            String title,
+            String body,
+            int notificationId,
+            PendingIntent contentIntent
+    ) {
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notification) // 상태 바에 표시되는 작은 아이콘
                 .setContentTitle(title)
@@ -56,8 +66,12 @@ public class NotificationHelper {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true); // 탭하면 알림이 사라지게 설정
 
-        // NotificationManager를 통해 알림 띄우기
-        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (contentIntent != null) {
+            builder.setContentIntent(contentIntent);
+        }
+
+        NotificationManager notificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationManager != null) {
             notificationManager.notify(notificationId, builder.build());
         }
