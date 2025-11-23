@@ -229,6 +229,14 @@ public class MainMenuRecordFragment extends Fragment implements OnMapReadyCallba
                 Toast.LENGTH_SHORT
         ).show();
 
+        // 주차 기록 완료 알림 보내기
+        NotificationHelper notificationHelper = new NotificationHelper(requireContext());
+        notificationHelper.sendNotification(
+                "주차 위치 기록 완료",
+                "새로운 주차 위치가 성공적으로 저장되었습니다.",
+                (int) System.currentTimeMillis() // Unique ID for the notification
+        );
+
         resetLocationAndMap();
         resetPhoto();
         resetTextFields();
