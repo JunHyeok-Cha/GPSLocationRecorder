@@ -4,6 +4,7 @@ import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import com.example.gpslocationrecorder.data.entity.ParkingRecord;
 
@@ -21,7 +22,10 @@ public interface ParkingRecordDao {
     @Delete
     void delete(ParkingRecord record);
 
-    // ★ [추가] 데이터 싹 다 지우기 명령
     @Query("DELETE FROM parking_records")
     void deleteAll();
+
+    // ★ [추가] 데이터 수정(업데이트) 명령
+    @Update
+    void update(ParkingRecord record);
 }

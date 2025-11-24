@@ -14,7 +14,7 @@
         android:orientation="vertical"
         android:paddingBottom="30dp">
 
-        <!-- 상단 타이틀 & 닫기 버튼 -->
+        <!-- 상단 타이틀 & 버튼들 -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="56dp"
@@ -28,7 +28,8 @@
                 android:layout_centerVertical="true"
                 android:padding="12dp"
                 android:src="@android:drawable/ic_menu_close_clear_cancel"
-                app:tint="#000000" />
+                app:tint="#000000"
+                tools:ignore="ContentDescription" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -38,9 +39,32 @@
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="#000000" />
+
+            <ImageButton
+                android:id="@+id/btn_edit"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_toStartOf="@id/btn_save"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_edit"
+                app:tint="#000000"
+                tools:ignore="ContentDescription" />
+
+            <ImageButton
+                android:id="@+id/btn_save"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_save"
+                android:visibility="gone"
+                app:tint="#000000"
+                tools:ignore="ContentDescription" />
         </RelativeLayout>
 
-        <!-- 1. 지도 영역 (위치 확인용) -->
+        <!-- 지도 영역 -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="250dp"
@@ -52,7 +76,6 @@
                 android:id="@+id/map_view_detail"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
-
         </androidx.cardview.widget.CardView>
 
         <!-- 날짜/시간 정보 -->
@@ -61,9 +84,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
-            android:text="2025.11.22 14:30"
             android:textColor="#888888"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            tools:text="2025.11.22 14:30" />
 
         <View
             android:layout_width="match_parent"
@@ -72,7 +95,7 @@
             android:layout_marginVertical="16dp"
             android:background="#EEEEEE" />
 
-        <!-- 2. 사진 영역 -->
+        <!-- 사진 영역 -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -99,7 +122,18 @@
                 android:src="@android:drawable/ic_menu_camera" />
         </androidx.cardview.widget.CardView>
 
-        <!-- 3. 상세 정보 (층수, 메모) -->
+        <!-- ★ [추가] 사진 변경 버튼 -->
+        <Button
+            android:id="@+id/btn_change_photo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            android:text="사진 변경하기"
+            android:visibility="gone"
+            tools:visibility="visible"/>
+
+        <!-- 층수 정보 -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -110,16 +144,20 @@
             android:textColor="#000000"
             android:textSize="16sp" />
 
-        <TextView
-            android:id="@+id/tv_detail_floor"
+        <EditText
+            android:id="@+id/et_detail_floor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
             android:layout_marginTop="8dp"
-            android:text="지하 2층"
+            android:background="@android:color/transparent"
+            android:enabled="false"
             android:textColor="#333333"
-            android:textSize="16sp" />
+            android:textColorHint="#AAAAAA"
+            android:textSize="16sp"
+            tools:text="지하 2층" />
 
+        <!-- 메모 정보 -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -130,15 +168,18 @@
             android:textColor="#000000"
             android:textSize="16sp" />
 
-        <TextView
-            android:id="@+id/tv_detail_memo"
+        <EditText
+            android:id="@+id/et_detail_memo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
             android:layout_marginTop="8dp"
-            android:text="기둥 뒤편"
+            android:background="@android:color/transparent"
+            android:enabled="false"
             android:textColor="#333333"
-            android:textSize="16sp" />
+            android:textColorHint="#AAAAAA"
+            android:textSize="16sp"
+            tools:text="기둥 뒤편" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
