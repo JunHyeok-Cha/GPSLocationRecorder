@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -53,12 +54,14 @@ public class ParkingDetailActivity extends AppCompatActivity implements OnMapRea
     private ImageView ivPhoto;
 
     private ParkingRecord currentRecord;
-    // ★ [수정] 새로 촬영된 사진의 파일 경로를 저장할 변수
     private String newPhotoPath = null;
 
-    // ★ [수정] MainMenuRecordFragment와 동일한 방식의 런처들
     private ActivityResultLauncher<String> cameraPermissionLauncher;
     private ActivityResultLauncher<Intent> cameraLauncher;
+
+    // ★ [추가] 텍스트 자동 클리어를 위한 플래그
+    private boolean isFloorCleared = false;
+    private boolean isMemoCleared = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,20 +79,12 @@ public class ParkingDetailActivity extends AppCompatActivity implements OnMapRea
     }
 
     private void initializeLaunchers() {
-        // 카메라 권한 요청 런처
         cameraPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-            if (isGranted) {
-                openCamera();
-            } else {
-                Toast.makeText(this, "카메라 권한이 필요합니다.", Toast.LENGTH_SHORT).show();
-            }
+            if (isGranted) openCamera();
+            else Toast.makeText(this, "카메라 권한이 필요합니다.", Toast.LENGTH_SHORT).show();
         });
 
-        // 카메라 실행 및 결과 처리 런처
-        cameraLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                this::handleCameraResult
-        );
+        cameraLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::handleCameraResult);
     }
 
     private void loadIntentData() {
@@ -119,16 +114,12 @@ public class ParkingDetailActivity extends AppCompatActivity implements OnMapRea
         mapView = findViewById(R.id.map_view_detail);
         btnChangePhoto = findViewById(R.id.btn_change_photo);
 
-        btnBack.setOnClickListener(v -> finish());
+        btnBack.setOnClickListener(v -> handleBackButton());
         btnEdit.setOnClickListener(v -> toggleEditMode(true));
         btnSave.setOnClickListener(v -> saveRecord());
-        // '사진 변경' 버튼 클릭 시 카메라 권한 확인
         btnChangePhoto.setOnClickListener(v -> {
-            if (hasCameraPermission()) {
-                openCamera();
-            } else {
-                cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
-            }
+            if (hasCameraPermission()) openCamera();
+            else cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
         });
     }
 
@@ -138,25 +129,71 @@ public class ParkingDetailActivity extends AppCompatActivity implements OnMapRea
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy년 MM월 dd일 a hh:mm", Locale.KOREA);
         tvDate.setText(sdf.format(new Date(currentRecord.createdAt)));
 
-        // ★ [수정] 파일 경로 또는 Uri 문자열을 Glide로 로드
         if (currentRecord.photoPath != null) {
-            Glide.with(this)
-                    .load(currentRecord.photoPath) // Glide는 경로, Uri 모두 잘 처리함
-                    .placeholder(android.R.drawable.ic_menu_camera)
-                    .into(ivPhoto);
+            Glide.with(this).load(currentRecord.photoPath).placeholder(android.R.drawable.ic_menu_camera).into(ivPhoto);
+        } else {
+            ivPhoto.setImageResource(android.R.drawable.ic_menu_camera);
         }
     }
 
     private void toggleEditMode(boolean isEditing) {
         etFloor.setEnabled(isEditing);
         etMemo.setEnabled(isEditing);
+
+        // ★ [수정] 배경 변경 및 텍스트 클리어 로직 추가
+        if (isEditing) {
+            Drawable background = ContextCompat.getDrawable(this, R.drawable.edit_text_background);
+            etFloor.setBackground(background);
+            etMemo.setBackground(background.getConstantState().newDrawable()); // 배경 복사해서 사용
+
+            // 수정 모드 진입 시, 클리어 플래그 초기화
+            isFloorCleared = false;
+            isMemoCleared = false;
+
+            // 포커스 리스너 설정 (포커스 될 때 딱 한번 텍스트 클리어)
+            etFloor.setOnFocusChangeListener((v, hasFocus) -> {
+                if (hasFocus && !isFloorCleared) {
+                    etFloor.setText("");
+                    isFloorCleared = true;
+                }
+            });
+            etMemo.setOnFocusChangeListener((v, hasFocus) -> {
+                if (hasFocus && !isMemoCleared) {
+                    etMemo.setText("");
+                    isMemoCleared = true;
+                }
+            });
+
+            etFloor.requestFocus();
+        } else {
+            // 조회 모드로 돌아갈 때 배경 제거 및 리스너 null 처리
+            etFloor.setBackground(null);
+            etMemo.setBackground(null);
+            etFloor.setOnFocusChangeListener(null);
+            etMemo.setOnFocusChangeListener(null);
+        }
+
         btnChangePhoto.setVisibility(isEditing ? View.VISIBLE : View.GONE);
         btnEdit.setVisibility(isEditing ? View.GONE : View.VISIBLE);
         btnSave.setVisibility(isEditing ? View.VISIBLE : View.GONE);
-        if (isEditing) etFloor.requestFocus();
     }
 
-    // ★ [추가] MainMenuRecordFragment의 카메라 관련 로직들
+    private void handleBackButton() {
+        if (btnSave.getVisibility() == View.VISIBLE) {
+            toggleEditMode(false);
+            displayData();
+            newPhotoPath = null;
+            Toast.makeText(this, "수정이 취소되었습니다.", Toast.LENGTH_SHORT).show();
+        } else {
+            finish();
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        handleBackButton();
+    }
+
     private boolean hasCameraPermission() {
         return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
     }
@@ -177,9 +214,7 @@ public class ParkingDetailActivity extends AppCompatActivity implements OnMapRea
                 Object extras = data.getExtras().get("data");
                 if (extras instanceof Bitmap) {
                     Bitmap capturedImageBitmap = (Bitmap) extras;
-                    // 비트맵을 파일로 저장하고 그 경로를 newPhotoPath에 저장
                     newPhotoPath = saveBitmapToFile(capturedImageBitmap);
-                    // ImageView에 촬영된 사진(비트맵)을 표시
                     ivPhoto.setImageBitmap(capturedImageBitmap);
                     Toast.makeText(this, "사진이 촬영되었습니다.", Toast.LENGTH_SHORT).show();
                 }
@@ -191,14 +226,12 @@ public class ParkingDetailActivity extends AppCompatActivity implements OnMapRea
         if (bitmap == null) return null;
         File directory = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         if (directory == null) return null;
-
         String fileName = "parking_" + System.currentTimeMillis() + ".jpg";
         File file = new File(directory, fileName);
-
         try (FileOutputStream fos = new FileOutputStream(file)) {
             bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
             fos.flush();
-            return file.getAbsolutePath(); // 저장된 파일의 절대 경로 반환
+            return file.getAbsolutePath();
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -208,17 +241,14 @@ public class ParkingDetailActivity extends AppCompatActivity implements OnMapRea
     private void saveRecord() {
         currentRecord.floor = etFloor.getText().toString();
         currentRecord.memo = etMemo.getText().toString();
-        // ★ [수정] 새로 촬영된 사진이 있으면, 경로를 업데이트
         if (newPhotoPath != null) {
             currentRecord.photoPath = newPhotoPath;
         }
-
         new Thread(() -> {
             db.parkingRecordDao().update(currentRecord);
             runOnUiThread(() -> {
                 Toast.makeText(this, "저장되었습니다.", Toast.LENGTH_SHORT).show();
                 toggleEditMode(false);
-                // 저장 후 newPhotoPath 초기화
                 newPhotoPath = null;
             });
         }).start();
