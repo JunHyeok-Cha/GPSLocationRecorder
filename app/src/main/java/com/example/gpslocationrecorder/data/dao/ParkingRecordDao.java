@@ -1,5 +1,6 @@
 package com.example.gpslocationrecorder.data.dao;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -17,7 +18,10 @@ public interface ParkingRecordDao {
     long insert(ParkingRecord record);
 
     @Query("SELECT * FROM parking_records ORDER BY created_at DESC")
-    List<ParkingRecord> getAll();
+    LiveData<List<ParkingRecord>> getAll();
+
+    @Query("SELECT * FROM parking_records ORDER BY created_at DESC LIMIT 1")
+    LiveData<ParkingRecord> getLatestRecord();
 
     @Delete
     void delete(ParkingRecord record);
@@ -25,7 +29,6 @@ public interface ParkingRecordDao {
     @Query("DELETE FROM parking_records")
     void deleteAll();
 
-    // ★ [추가] 데이터 수정(업데이트) 명령
     @Update
     void update(ParkingRecord record);
 }

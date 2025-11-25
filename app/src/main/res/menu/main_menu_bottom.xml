@@ -3,18 +3,22 @@
 
     <item
         android:id="@+id/menu_home"
+        android:icon="@android:drawable/ic_menu_myplaces"
         android:title="@string/home" />
 
     <item
         android:id="@+id/menu_record"
+        android:icon="@android:drawable/ic_menu_add"
         android:title="@string/record" />
 
     <item
         android:id="@+id/menu_list"
+        android:icon="@android:drawable/ic_menu_agenda"
         android:title="@string/list" />
 
     <item
         android:id="@+id/menu_setting"
+        android:icon="@android:drawable/ic_menu_manage"
         android:title="@string/setting" />
 
 </menu>
